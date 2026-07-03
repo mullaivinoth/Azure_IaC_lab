@@ -101,5 +101,5 @@ resource "azurerm_virtual_hub_connection" "bastion_to_hub" {
   name                      = "con-vnet-bastion-to-Vhub-lab-cin-01"
   virtual_hub_id            = azurerm_virtual_hub.lab.id
   remote_virtual_network_id = azurerm_virtual_network.bastion.id
-  internet_security_enabled = false
+  internet_security_enabled = true
 }
