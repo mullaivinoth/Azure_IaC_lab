@@ -1,0 +1,70 @@
+name: Terraform Plan
+
+on:
+  pull_request:
+    paths:
+      - 'environments/lab/**'
+      - '.github/workflows/plan.yml'
+      - '.github/workflows/apply.yml'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  plan:
+    name: terraform plan
+    runs-on: [self-hosted, linux, azure]
+    defaults:
+      run:
+        working-directory: environments/lab
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure login (managed identity)
+        run: az login --identity
+
+      - name: Write terraform.tfvars
+        run: |
+          echo 'subscription_id = "d6e34000-17b3-4ff6-b09d-47bee0f62b26"' > terraform.tfvars
+
+      - name: Terraform init
+        env:
+          ARM_USE_MSI: "true"
+          ARM_SUBSCRIPTION_ID: d6e34000-17b3-4ff6-b09d-47bee0f62b26
+        run: terraform init -no-color
+
+      - name: Terraform plan
+        id: plan
+        env:
+          ARM_USE_MSI: "true"
+          ARM_SUBSCRIPTION_ID: d6e34000-17b3-4ff6-b09d-47bee0f62b26
+        run: |
+          set -o pipefail
+          terraform plan -no-color -out=tfplan | tee plan-output.txt
+
+      - name: Post plan to PR
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let planOutput = '';
+            try {
+              planOutput = fs.readFileSync('environments/lab/plan-output.txt', 'utf8');
+            } catch (e) {
+              planOutput = 'Plan output not available.';
+            }
+            // Truncate if too long
+            if (planOutput.length > 60000) {
+              planOutput = planOutput.substring(0, 60000) + '\n\n... (truncated)';
+            }
+            const body = `## Terraform Plan Output\n\n<details><summary>Click to expand</summary>\n\n\`\`\`hcl\n${planOutput}\n\`\`\`\n\n</details>`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
