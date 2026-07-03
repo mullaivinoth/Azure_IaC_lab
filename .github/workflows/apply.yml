@@ -1,0 +1,44 @@
+name: Terraform Apply
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'environments/lab/**'
+      - '.github/workflows/apply.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  apply:
+    name: terraform apply
+    runs-on: [self-hosted, linux, azure]
+    environment: production
+    defaults:
+      run:
+        working-directory: environments/lab
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure login (managed identity)
+        run: az login --identity
+
+      - name: Write terraform.tfvars
+        run: |
+          echo 'subscription_id = "d6e34000-17b3-4ff6-b09d-47bee0f62b26"' > terraform.tfvars
+
+      - name: Terraform init
+        env:
+          ARM_USE_MSI: "true"
+          ARM_SUBSCRIPTION_ID: d6e34000-17b3-4ff6-b09d-47bee0f62b26
+        run: terraform init -no-color
+
+      - name: Terraform apply
+        env:
+          ARM_USE_MSI: "true"
+          ARM_SUBSCRIPTION_ID: d6e34000-17b3-4ff6-b09d-47bee0f62b26
+        run: terraform apply -no-color -auto-approve
