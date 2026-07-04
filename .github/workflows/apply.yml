@@ -10,10 +10,66 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
+
+  plan:
+    name: 1. Plan (review before approving apply)
+    runs-on: [self-hosted, linux, azure]
+    defaults:
+      run:
+        working-directory: environments/lab
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure login (managed identity)
+        run: az login --identity
+
+      - name: Write terraform.tfvars
+        run: |
+          echo 'subscription_id = "d6e34000-17b3-4ff6-b09d-47bee0f62b26"' > terraform.tfvars
+
+      - name: Terraform init
+        env:
+          ARM_USE_MSI: "true"
+          ARM_SUBSCRIPTION_ID: d6e34000-17b3-4ff6-b09d-47bee0f62b26
+        run: terraform init -no-color
+
+      - name: Terraform plan
+        env:
+          ARM_USE_MSI: "true"
+          ARM_SUBSCRIPTION_ID: d6e34000-17b3-4ff6-b09d-47bee0f62b26
+        run: |
+          set -o pipefail
+          terraform plan -no-color -out=tfplan | tee plan-output.txt
+          
+          echo "## Pre-Apply Terraform Plan" >> $GITHUB_STEP_SUMMARY
+          echo "**Review this plan before approving the apply job below.**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```hcl' >> $GITHUB_STEP_SUMMARY
+          cat plan-output.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload plan file
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: environments/lab/tfplan
+          retention-days: 7
+
+      - name: Upload plan output
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-output
+          path: environments/lab/plan-output.txt
+          retention-days: 7
+
   apply:
-    name: terraform apply
+    name: 2. Apply (requires manual approval)
+    needs: plan
     runs-on: [self-hosted, linux, azure]
     environment: production
     defaults:
@@ -37,8 +93,34 @@ jobs:
           ARM_SUBSCRIPTION_ID: d6e34000-17b3-4ff6-b09d-47bee0f62b26
         run: terraform init -no-color
 
+      - name: Download plan file
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: environments/lab
+
+      - name: Download plan output
+        uses: actions/download-artifact@v4
+        with:
+          name: plan-output
+          path: environments/lab
+
+      - name: Show plan being applied
+        run: |
+          echo "## Plan being applied (from artifact)" >> $GITHUB_STEP_SUMMARY
+          echo '```hcl' >> $GITHUB_STEP_SUMMARY
+          cat plan-output.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
       - name: Terraform apply
         env:
           ARM_USE_MSI: "true"
           ARM_SUBSCRIPTION_ID: d6e34000-17b3-4ff6-b09d-47bee0f62b26
-        run: terraform apply -no-color -auto-approve
+        run: |
+          set -o pipefail
+          terraform apply -no-color -auto-approve tfplan | tee apply-output.txt
+          
+          echo "## Terraform Apply Output" >> $GITHUB_STEP_SUMMARY
+          echo '```hcl' >> $GITHUB_STEP_SUMMARY
+          cat apply-output.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
