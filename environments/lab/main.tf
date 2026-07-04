@@ -40,18 +40,18 @@ resource "azurerm_virtual_network" "bastion" {
 # ============================================================
 
 resource "azurerm_subnet" "default" {
-  name                 = "default"
-  resource_group_name  = azurerm_resource_group.lab.name
-  virtual_network_name = azurerm_virtual_network.bastion.name
-  address_prefixes     = ["10.101.0.0/26"]
+  name                            = "default"
+  resource_group_name             = azurerm_resource_group.lab.name
+  virtual_network_name            = azurerm_virtual_network.bastion.name
+  address_prefixes                = ["10.101.0.0/26"]
   default_outbound_access_enabled = false
 }
 
 resource "azurerm_subnet" "bastion" {
-  name                 = "bastion_subnet"
-  resource_group_name  = azurerm_resource_group.lab.name
-  virtual_network_name = azurerm_virtual_network.bastion.name
-  address_prefixes     = ["10.101.64.0/26"]
+  name                            = "bastion_subnet"
+  resource_group_name             = azurerm_resource_group.lab.name
+  virtual_network_name            = azurerm_virtual_network.bastion.name
+  address_prefixes                = ["10.101.64.0/26"]
   default_outbound_access_enabled = false
 }
 
@@ -102,4 +102,15 @@ resource "azurerm_virtual_hub_connection" "bastion_to_hub" {
   virtual_hub_id            = azurerm_virtual_hub.lab.id
   remote_virtual_network_id = azurerm_virtual_network.bastion.id
   internet_security_enabled = true
+}
+# ============================================================
+# Wave 5: New subnet (demo change)
+# ============================================================
+
+resource "azurerm_subnet" "app" {
+  name                            = "snet-app"
+  resource_group_name             = azurerm_resource_group.lab.name
+  virtual_network_name            = azurerm_virtual_network.bastion.name
+  address_prefixes                = ["10.101.1.0/26"]
+  default_outbound_access_enabled = false
 }
