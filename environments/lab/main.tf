@@ -114,10 +114,10 @@ resource "azurerm_subnet" "app" {
   address_prefixes                = ["10.101.1.0/26"]
   default_outbound_access_enabled = false
 }
-resource "azurerm_subnet" "db" {
-  name                            = "snet-db"
-  resource_group_name             = azurerm_resource_group.lab.name
-  virtual_network_name            = azurerm_virtual_network.bastion.name
-  address_prefixes                = ["10.101.2.0/26"]
-  default_outbound_access_enabled = false
+resource "azurerm_subnet" "genconfig_test" {
+  address_prefixes                              = ["10.101.3.0/26"]
+  default_outbound_access_enabled               = true
+  name                                          = "snet-genconfig-test"
+  resource_group_name                           = azurerm_resource_group.lab.name
+  virtual_network_name                          = azurerm_virtual_network.bastion.name
 }
