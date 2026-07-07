@@ -120,4 +120,7 @@ resource "azurerm_subnet" "genconfig_test" {
   name                                          = "snet-genconfig-test"
   resource_group_name                           = azurerm_resource_group.lab.name
   virtual_network_name                          = azurerm_virtual_network.bastion.name
+    lifecycle {
+    prevent_destroy = true
+  }
 }
