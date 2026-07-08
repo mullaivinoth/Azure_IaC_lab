@@ -5,3 +5,10 @@ resource "azurerm_subnet" "db" {
   address_prefixes                = ["10.101.2.0/26"]
   default_outbound_access_enabled = false
 }
+resource "azurerm_subnet" "demo5_create" {
+  name                            = "snet-demo5-create"
+  resource_group_name             = azurerm_resource_group.lab.name
+  virtual_network_name            = azurerm_virtual_network.bastion.name
+  address_prefixes                = ["10.101.5.0/26"]
+  default_outbound_access_enabled = false
+}
