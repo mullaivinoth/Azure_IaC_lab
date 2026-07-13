@@ -1,6 +1,10 @@
 variable "subscription_id" {
   description = "Azure subscription ID"
   type        = string
+  validation {
+    condition     = var.subscription_id == "d6e34000-17b3-4ff6-b09d-47bee0f62b26"
+    error_message = "This is the LAB environment. subscription_id must be the personal lab subscription, not any other subscription."
+  }
 }
 
 variable "location" {
