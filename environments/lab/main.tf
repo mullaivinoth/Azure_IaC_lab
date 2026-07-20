@@ -1,9 +1,9 @@
 # Resources will be added here via imports.
-# Starting empty — imports come after 'terraform init' succeeds.
-# ============================================================
+# Starting empty — imports come after we mention in import
+
 # Wave 1: Foundation resources
 # Resource Group, Virtual WAN, Virtual Hub, Virtual Network
-# ============================================================
+
 
 resource "azurerm_resource_group" "lab" {
   name     = var.resource_group_name
@@ -35,9 +35,9 @@ resource "azurerm_virtual_network" "bastion" {
   address_space       = ["10.101.0.0/16"]
   tags                = var.tags
 }
-# ============================================================
+
 # Wave 2: Subnets, NSG, Public IP
-# ============================================================
+
 
 resource "azurerm_subnet" "default" {
   name                            = "default"
@@ -93,9 +93,9 @@ resource "azurerm_public_ip" "linux_vm" {
     prevent_destroy = true
   }
 }
-# ============================================================
+
 # Wave 3: Hub-to-VNet Connection
-# ============================================================
+
 
 resource "azurerm_virtual_hub_connection" "bastion_to_hub" {
   name                      = "con-vnet-bastion-to-Vhub-lab-cin-01"
@@ -103,9 +103,9 @@ resource "azurerm_virtual_hub_connection" "bastion_to_hub" {
   remote_virtual_network_id = azurerm_virtual_network.bastion.id
   internet_security_enabled = true
 }
-# ============================================================
+
 # Wave 5: New subnet (demo change)
-# ============================================================
+
 
 resource "azurerm_subnet" "app" {
   name                            = "snet-app"
@@ -114,4 +114,4 @@ resource "azurerm_subnet" "app" {
   address_prefixes                = ["10.101.1.0/26"]
   default_outbound_access_enabled = false
 }
-# test from laptop 2
+
